@@ -482,12 +482,6 @@ Named so the omissions read as decisions. Detail lives in NEXT_STEPS.md.
   foreground queue for the current page ahead of a background queue. ~1,300
   to 1,400 requests per visit; at cap 10 and ~1.6s per request, ~3.5 to 4
   minutes.
-- **Auto-refresh on page visit with a staleness window.** The data is stable,
-  so it doubles traffic for no visible change, and routes every revisit
-  through a refresh, which is where abort and ordering bugs live.
-- **Freshness display.** "Updated N min ago" per row, and the `fetchedAt`
-  field behind it. Not in the brief, and showing it accurately would need a
-  ticking clock.
 - **Country lookup**, page number in the URL, mobile layout, a ticking clock
   for humanized times.
 
@@ -500,13 +494,6 @@ Named so the omissions read as decisions. Detail lives in NEXT_STEPS.md.
   and puts retries where they're shared.
 - **Background loading and login sort** as described above, if the aggregator
   isn't available.
-- **Freshness.** In two stages. First make it observable: store `fetchedAt`
-  per row and show "Updated N min ago", with a clock that ticks at the
-  precision shown. Then, if the use case calls for it, a policy:
-  stale-while-revalidate with a TTL, triggered by data that changes often,
-  long-lived sessions, or decisions made from the data. You can't apply a
-  freshness policy to data whose age you don't track, and the TTL would come
-  from the use case, not a guess.
 - **Sorting** by ID, name, email (client-side today) and login (needs the
   aggregator or background loading).
 - **Country from IP.** Server-side lookup against a local GeoIP database
@@ -536,7 +523,10 @@ Named so the omissions read as decisions. Detail lives in NEXT_STEPS.md.
 - **Personal data.** Emails and IP addresses are personal data. At scale:
   access control on the endpoint, a retention policy for IPs, and possibly
   masking IPs in the UI by default.
-- **Page in URL, mobile layout, a ticking clock for humanized times.**
+- **A ticking clock for humanized times.** A clock that ticks at the
+  precision shown. Today nothing reads the clock during render; see "The
+  display clock".
+- **Page in URL, mobile layout.**
 
 ## Anticipated questions
 

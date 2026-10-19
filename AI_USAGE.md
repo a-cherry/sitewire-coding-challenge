@@ -254,21 +254,48 @@ and row refresh is in `NEXT_STEPS.md`.
   typed a parameter as `React.ReactNode` without importing `React`. The agent
   caught it in its own code before running the checks and changed it to
   `import type { ReactNode } from 'react'`.
-- **(Step 8) A fail-first run that skipped an assertion.** To show the N5 test
+- **(Step 8) A fail-first run that skipped an assertion.** To show the test
   `a row whose latest login is 30 days old shows the Inactive badge and tint`
   failing, the agent removed the loaded-row inactive check in `UserRow.tsx`.
   The test failed on the cell text, so the `toHaveClass('inactive')`
   assertion after it never ran. The agent caught it in its own output and
   ran a second break that removed only the row class, which failed the class
   assertion.
-- **(Step 8) The reviewer flagged the N4 and N5 tests for no fail-first
-  evidence.** The agent had shown both failing against broken code in its
+- **(Step 8) The reviewer flagged two new tests for no fail-first
+  evidence.** The tests were `a list of one user shows the singular count`
+  and `a row whose latest login is 30 days old shows the Inactive badge and
+  tint`. The agent had shown both failing against broken code in its
   report. The reviewer only checks the repo, and the conversation isn't in
   it.
 - **(Step 8) A `cat` flag macOS doesn't have.** The agent ran `cat -A` to
   check the end of `.gitignore`, and the BSD `cat` rejected the flag. The
   edit after it still ran, and the agent confirmed it with
   `git check-ignore`.
+- **(Step 9) Sorting described as if it existed.** The agent turned
+  `DECISIONS.md` "(client-side today)" into "ID, name and email sorting is
+  client-side today" in `NEXT_STEPS.md`, which reads as a feature the app
+  has. Caught by the reviewer. Reworded to "could be done client-side, over
+  the list already loaded."
+- **(Step 9) "Retrying…" claimed for `/users`.** `README.md` put "'Retrying…'
+  shows as soon as an attempt fails" under "Retry policy, for both
+  endpoints", but `useUsers.ts` passes `onRetry: () => {}` and the page stays
+  on "Loading users…". Caught by the reviewer. The sentence now starts "On
+  rows".
+- **(Step 9) API client listed as a pure module.** The `README.md` Tests
+  section listed the client's failure classification under "Unit tests on
+  the pure modules", but `client.ts` calls `fetch`. Caught by the reviewer.
+  The README now says the client is tested with `fetch` stubbed.
+- **(Step 9) A stated reason changed in the README.** `README.md` said
+  hand-rolled fetching makes every transition "visible and tested", where
+  `DECISIONS.md` says "visible and owned". Caught by the reviewer. Changed to
+  the `DECISIONS.md` wording.
+- **(Step 9) Cut items miscounted.** When I asked to remove the items I'd
+  cut from `NEXT_STEPS.md` from `DECISIONS.md` too, the agent listed four
+  instead of five and left Freshness in. It noticed after making the edit and
+  flagged it.
+- **(Step 9) Lines left unwrapped after edits.** Two paragraphs in
+  `README.md` and `NEXT_STEPS.md` ran past the line width after review
+  fixes. The agent caught it in its own diff and rewrapped them.
 
 ## What the AI got right that I had not specified
 
@@ -416,6 +443,27 @@ and row refresh is in `NEXT_STEPS.md`.
   Hagain". The agent showed that the label is built from the full name at
   `UserRow.tsx:79`, so the text was damaged in copying, not produced by the
   app.
+- **(Step 9) Missing content reported, not invented.** The agent left out
+  the README time spent and the parts of `NEXT_STEPS.md` that
+  `DECISIONS.md` had no source for. It reported each one as an instruction
+  not followed, and the reviewer confirmed there was no source text.
+- **(Step 9) Retry budget gap found.** Asked for missing system design
+  practices, the agent pointed out that each row retries on its own. If the
+  API is fully down, one page costs 25 rows x 4 attempts = 100 requests,
+  repeated on every visit or Try again. It was the one gap it found in what
+  was built.
+- **(Step 9) Retry-After explained before I cut it.** The agent explained
+  429 and `Retry-After`, and that a browser can't read `Retry-After`
+  cross-origin unless the API lists it in `Access-Control-Expose-Headers`.
+  It said it hadn't checked this API's headers.
+- **(Step 9) Dangling references fixed on removal.** Removing the cut items
+  from `DECISIONS.md` left two lines pointing at deleted text: the
+  "Row state machine" pointer to "Deliberately not built", and "Row refresh
+  is in NEXT_STEPS.md" in "Anticipated questions". The agent trimmed both
+  and kept the decisions. It also gave the ticking clock its own
+  `DECISIONS.md` entry, so `NEXT_STEPS.md` still traces to it, and flagged
+  that `CLAUDE.md` still said every out-of-scope item was in
+  `NEXT_STEPS.md`.
 
 ## What I changed manually
 
@@ -438,6 +486,18 @@ and row refresh is in `NEXT_STEPS.md`.
   and gave the agent the results. All 9 items were observed. No user in ids
   1 to 300 had an empty logins array, so "Never logged in" was checked by
   stubbing user 301's logins response.
+- **(Step 9) Items cut from `NEXT_STEPS.md` and `DECISIONS.md`.** I cut
+  Batch endpoint, since an agent mentioned it once and I moved past it. I
+  cut Refresh all and Refresh page, Refreshing a row that loaded, and
+  Freshness and auto-refresh as outside the brief. I cut 429 / Retry-After
+  as not in the brief and purely hypothetical. I then had the agent remove
+  all five from `DECISIONS.md` and update the out-of-scope line in
+  `CLAUDE.md`. Sorting stays, since it's expected for data shown this way.
+- **(Step 9) Earlier entries that point to `NEXT_STEPS.md`.** The Planning
+  session section and the 5-minute window bullet say Refresh all and Refresh
+  page, auto-refresh, row refresh and the freshness display went to
+  `NEXT_STEPS.md`. Those items were later cut from `NEXT_STEPS.md` as
+  outside the brief. Sorting and background loading are still there.
 
 ## Judgment calls where I accepted the agent's reasoning
 
@@ -572,5 +632,25 @@ and row refresh is in `NEXT_STEPS.md`.
   `App.test.tsx` on its own as `fdbad49`.
 - **(Step 8) Playwright log ignored.** I had the agent add `.playwright-mcp/`
   to `.gitignore`.
-- **(Step 8) No re-proof for the N4 and N5 tests.** I disregarded the
-  reviewer's fail-first note.
+- **(Step 8) No re-proof for the singular count and inactive row tests.** I
+  disregarded the reviewer's fail-first note.
+- **(Step 9) Final review fixes.** I accepted the reviewer's findings on
+  the sorting wording, the `/users` "Retrying…" claim, the pure-module
+  claim and the "tested" wording, with the agent's recommended fixes.
+- **(Step 9) Four system design items added.** Of the eight practices the
+  agent proposed, I accepted four: a retry budget or circuit breaker,
+  client telemetry, storing the latest login on write, and personal data
+  handling. The agent added them to `DECISIONS.md` "NEXT_STEPS material"
+  first, then to `NEXT_STEPS.md`.
+- **(Step 9) Ticking clock filled from `DECISIONS.md`.** I accepted the
+  agent's wording, drawn from "The display clock".
+- **(Step 9) Page in the URL and mobile layout kept without a reason.** The
+  reviewer flagged them for missing "why deferred" and "what it would
+  take". I kept them as they are, as future state in a hypothetical world.
+- **(Step 9) `useUsers.ts` comment kept.** The reviewer said
+  `// Runs on mount and again whenever Try again returns the page to
+  loading.` came close to restating the code. I kept it on the agent's
+  reasoning: it's the only place that says Try again works by re-running the
+  effect through its `loading` dependency.
+- **(Step 9) No time spent in the README.** The reviewer flagged it as
+  required by `DECISIONS.md`. I chose to leave it out.

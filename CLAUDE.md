@@ -194,7 +194,8 @@ silently breaks something. If deleting it only removes prose, delete it.
 
 ## Deliberately out of scope
 
-Do not implement these. They are recorded in NEXT_STEPS.md.
+Do not implement these. The ones kept as future work are recorded in
+NEXT_STEPS.md.
 
 - Sorting of any column.
 - Background loading of logins for users off the current page, and any
