@@ -8,7 +8,7 @@ DECISIONS.md holds the reasoning and wins any disagreement with this file.
 1. **Review.** From step 2 onward, the `reviewer` subagent reviews the project
    before the step starts: checks output, the previous step's acceptance
    criteria, and drift from the brief, DECISIONS.md and CLAUDE.md. It reports;
-   it does not edit.
+   it does not edit. Run it as SUBAGENT_PROTOCOL.md describes.
 2. **Decide.** Drew reads the report and says which findings to fix. Fixes
    happen before the step starts, as their own change.
 3. **Implement.** The prompt names the step. The agent writes only that
@@ -193,14 +193,16 @@ domain data or a classified failure. No retries yet.
     Never throw.
   - Per-attempt timeout of `REQUEST_TIMEOUT_MS`, implemented with
     `setTimeout` and an internal `AbortController` (not `AbortSignal.timeout`)
-    so fake timers control it in tests.
+    so fake timers control it in tests. It covers the wait for the response,
+    not reading its body.
   - The caller's `signal` aborting produces `aborted`. The internal timeout
     firing produces `timeout`. When the client classifies a fetch rejection,
     it checks the caller's signal first: if the caller has aborted, the result
     is `aborted` even if the timeout also fired. A result already returned as
     `timeout` before the caller aborted stands.
   - Non-2xx: `http` with the status; body ignored. Fetch rejection that isn't
-    an abort: `network`. 2xx that fails validation or isn't JSON: `invalid`.
+    an abort: `network`. A body that fails while being read: `network`. 2xx
+    that fails validation or isn't JSON: `invalid`.
   - The timeout timer is cleared on every exit path.
 
 **Out of scope.** Retries, backoff, any knowledge of rows or pages.
@@ -209,15 +211,21 @@ domain data or a classified failure. No retries yet.
 - `validate`: a valid users payload; a user with a numeric `email`; duplicate
   user ids are invalid; an empty users array is valid; valid logins; `user_id` mismatch; one entry with an unparseable `login_time`;
   `logins` missing; empty `logins` is valid.
-- `client`: 200 valid; 500 is `http` 500 with a non-JSON body; network
-  rejection is `network`; a response slower than 4s is `timeout`; caller abort
-  is `aborted`; the timeout firing and the caller aborting in the same tick,
-  before the fetch rejection is classified, is `aborted`; 200 with invalid
-  body is `invalid`.
+- `client`: 200 valid for users; 200 valid for logins, requesting the right
+  URL; 500 is `http` 500 with a non-JSON body; network rejection is
+  `network`; a body that fails while being read is `network`; a response
+  slower than 4s is `timeout`; a response that arrives within 4s is not timed
+  out while its body is read; caller abort is `aborted`; the timeout firing
+  and the caller aborting in the same tick, before the fetch rejection is
+  classified, is `aborted`; 200 with invalid body is `invalid`; 200 with a
+  non-JSON body is `invalid`.
+- After every `client` test, no timers remain, so the timeout timer is
+  cleared on every exit path.
 - Every test seen failing first.
 
 **Acceptance criteria.**
-- `client.ts` is the only file in `src` that references `fetch`.
+- `client.ts` is the only app file in `src` that references `fetch`. Test
+  files stub it.
 - No function in `src/api` throws for any server response.
 - Nothing outside `src/api` imports from `validate.ts` or uses raw response
   types.

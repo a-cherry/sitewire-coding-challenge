@@ -18,10 +18,6 @@ _To be written at the end, once implementation is done._
 - **Claude Code** for implementation, one plan step at a time, with a
   read-only `reviewer` subagent checking the project before each step.
 
-## Time
-
-_To be filled in: planning session, implementation, review._
-
 ## Method
 
 The implementing agent gets a contract, not a problem. `CLAUDE.md` pins the
@@ -169,6 +165,10 @@ and row refresh is in `NEXT_STEPS.md`.
   failing first. The agent had already shown it failing, with
   `afterEach(cleanup)` removed. The reviewer only checks the repo, and the
   conversation isn't in it.
+- **(Step 3) A grep that zsh rejected.** The agent's first acceptance check
+  for `fetch` references used `grep --include=*.ts`, which zsh expanded as a
+  glob and failed with "no matches found" before any check ran. The agent
+  caught the error and reran the checks without the flag.
 
 ## What the AI got right that I had not specified
 
@@ -207,10 +207,38 @@ and row refresh is in `NEXT_STEPS.md`.
   The agent reported it, ran a general-purpose agent with the reviewer.md
   instructions word for word, and checked `git status` afterwards to confirm
   nothing changed.
+- **(Step 3) A failed body read is retried.** `client.ts` reads the body as
+  text and parses it in a separate step. A body that fails while being read
+  is `network`, which is retried, and only text that isn't JSON is
+  `invalid`. Reading and parsing in one call would have turned a dropped
+  connection into a final failure.
+- **(Step 3) Proof the timeout timer is always cleared.** `PLAN.md` required
+  clearing it on every exit path but named no test. The agent added an
+  `afterEach` in `client.test.ts` asserting `vi.getTimerCount()` is 0, and
+  showed it failing on 7 tests with `clearTimeout` removed.
+- **(Step 3) No `any` from `Array.isArray`.** `Array.isArray` narrows an
+  `unknown` value to `any[]`. The agent added an `isArray` type guard in
+  `validate.ts` that narrows to `readonly unknown[]`, which keeps the
+  no-`any` rule without a cast.
+- **(Step 3) An acceptance criterion that couldn't pass as written.** AC1
+  said `client.ts` is the only file in `src` that references `fetch`, but the
+  tests `PLAN.md` requires stub `fetch` in `client.test.ts`. The agent
+  reported the conflict instead of marking it PASS.
 
 ## What I changed manually
 
-_Recorded during implementation._
+- **(Step 3) Timeout ends when the response arrives.** The agent's
+  `client.ts` kept the 4s timeout running until the body had been read, a
+  choice it flagged as not covered by `DECISIONS.md`. I changed the rule so
+  the timeout covers only the wait for the response. The agent added the
+  test `a response that arrives within 4s is not timed out while its body is
+  read`, showed it failing as `timeout` against the old code, and recorded
+  the rule in `DECISIONS.md` "Retry policy".
+- **(Step 3) Reviewer protocol in its own file.** The reviewer agent type
+  wasn't loaded after I cleared context between steps. The agent proposed
+  adding the launch steps, including the general-purpose fallback, to
+  `CLAUDE.md`. I moved them to `SUBAGENT_PROTOCOL.md`, with a pointer from
+  `PLAN.md` "How each step runs".
 
 ## Judgment calls where I accepted the agent's reasoning
 
@@ -228,3 +256,16 @@ _Recorded during implementation._
 - **(Step 2) "just now" left as a literal.** I didn't act on the reviewer's
   "just now" finding. It meets the brief, and I agreed with the agent's
   reasoning: `DECISIONS.md` specifies the literal, and the app is English-only.
+- **(Step 3) Extra client tests kept.** The agent added tests beyond the
+  `PLAN.md` list: a `fetchUserLogins` 200 test that checks the URL, a
+  non-JSON 200 test, and a body read failure test. I kept them and added
+  them to the step 3 test list.
+- **(Step 3) AC1 reworded.** I accepted the agent's reading that AC1 applies
+  to app code, and changed it to "`client.ts` is the only app file in `src`
+  that references `fetch`. Test files stub it."
+- **(Step 3) No re-proof for step 2 tests.** The reviewer couldn't verify
+  that the step 2 tests were seen failing first, since the evidence is in a
+  cleared conversation. I chose not to act on it.
+- **(Step 3) "just now" left as a literal again.** The reviewer repeated
+  that the two "just now" tests don't prove the locale pin. I didn't act on
+  it: other locales and languages are out of scope.

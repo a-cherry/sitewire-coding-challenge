@@ -153,6 +153,8 @@ Applies to both `/users` and the logins endpoint.
 - Per-attempt timeout: 4s. Above the observed max of ~3.3s with margin. A
   lower timeout would cancel responses that were about to succeed and turn
   slow successes into retries.
+- The timeout covers the wait for the response, not reading its body. A body
+  that fails while being read is a network error and is retried.
 - 3 retries, 4 attempts total.
 - Backoff before retry n (retries numbered 1 to 3): base of 200ms, 400ms,
   800ms, with equal jitter (a wait drawn between half the base and the full
