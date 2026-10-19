@@ -8,7 +8,7 @@ those failures and shows the state of every row as it loads.
 
 ## Demo
 
-[add demo here]
+[sitewire-demo.webm](https://github.com/user-attachments/assets/5d2b2a4d-be93-4eae-9ab5-147fbda6ed54)
 
 Recorded with Playwright against the live API, from a production build. Page
 1 fills in as rows load, some showing "Retrying…" first, and logins 30 days
