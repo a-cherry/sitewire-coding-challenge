@@ -98,6 +98,12 @@ Probed by hand before design (Oct 16 2026):
 - Vite, React (current stable), TypeScript strict with
   `noUncheckedIndexedAccess`. Vitest, React Testing Library, npm.
 - Runtime dependencies: `react` and `react-dom` only.
+- Linting is ESLint with `eslint-plugin-react-hooks` (recommended config),
+  replacing the oxlint config the current Vite template ships. Two reasons:
+  `react-hooks/purity` mechanically enforces "never read the clock or
+  randomness during render", which would otherwise rest on review; and the
+  plugin's dependency checking understands `useEffectEvent`, which the
+  page-change effect relies on. Dev dependencies only.
 - Web over CLI: the brief's emphasis is states and the experience of using the
   app. A table whose rows fill in, retry and fail independently shows that
   directly; a CLI would mostly print a final result. TypeScript and React also
