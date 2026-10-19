@@ -196,6 +196,35 @@ and row refresh is in `NEXT_STEPS.md`.
   `an abort before the backoff starts resolves aborted at once and makes no
   further calls`. It showed the test failing with the check removed (a 5s
   test timeout and one leftover timer) and passing with it restored.
+- **(Step 5) Guards no test protected.** The first Step 5 tests followed the
+  `PLAN.md` list, which left reducer guards that could be weakened with every
+  test still passing. In `rowsReducer.ts`, `loadStarted` was rejected from
+  `loading`, `loaded` and `neverLoggedIn` but tested only on `loaded`, and the
+  tokenless-row tests used only `idle`. In `pageReducer.ts`, the guards that
+  ignore events outside the table had no tests. The agent listed these gaps
+  in its step report. The reviewer then found two more: no `idle` row in the
+  `pageChanged` unchanged-rows test, and 3 of the 6 ignored page events
+  untested. The agent added the tests and showed each failing under a break
+  that passed the old tests: `loadStarted` rejected only from `loaded`, only
+  `idle` rows ignoring token events, `pageChanged` replacing `idle` rows, and
+  each page guard narrowed to reject a single state.
+- **(Step 5) A double-click race that React 19 doesn't have.** To justify
+  testing `loadStarted` on a `loading` row, the agent said a double click on
+  Try again could dispatch a second `loadStarted` before React re-rendered.
+  It corrected itself in its next answer: React 19 finishes the first click's
+  update before handling the second, so the button is already gone. The test
+  still guards against a hook bug that starts a load on a row already
+  loading.
+- **(Step 5) Ungrammatical test names.** The first tokenless-row `test.each`
+  in `rowsReducer.test.ts` printed names like `attemptFailed on a idle row
+  with no token`. The agent caught it in its own test output and renamed the
+  cases to `$name on $row.kind, which holds no token, leaves state
+  unchanged`.
+- **(Step 5) Reviewer run widened without asking.** I asked for a review of
+  the Step 4 work before the Step 5 commit. The agent assumed I meant Step 5
+  and launched the reviewer on Step 5 plus a recheck of Step 4's acceptance
+  criteria, and explained only once it was running. I stopped it and asked
+  for a Step 5 review.
 
 ## What the AI got right that I had not specified
 
@@ -275,6 +304,20 @@ and row refresh is in `NEXT_STEPS.md`.
   Step 5 tested only `succeeded` on a row with no token. A reducer missing the
   token check in its `attemptFailed` branch would leave that row showing
   "Retrying…" for the rest of the session, with no request in flight.
+- **(Step 5) A rule before tests for ignored page events.** `pageReducer.ts`
+  ignores events outside the `DECISIONS.md` table, but no decision covered
+  that, so a test would have mapped to no rule. The agent flagged the cases
+  instead of adding tests or a rule on its own. It pointed out that
+  `retryRequested` while `loading` returning a new object could re-run the
+  Step 6 `/users` effect and abort the request in flight.
+- **(Step 5) Type-level rules checked with the compiler.** The agent
+  type-checked a throwaway file that dispatched `succeeded` with `allFuture`
+  and an `aborted` event, showed `tsc` rejecting both, then deleted the file.
+- **(Step 5) New tests run against the old ones.** For the review fixes, the
+  agent ran each break against a temporary copy of the old test files as
+  well as the new ones. Every break passed the old tests and failed exactly
+  one new test, which shows the new cases close real gaps rather than repeat
+  existing ones.
 
 ## What I changed manually
 
@@ -343,3 +386,29 @@ and row refresh is in `NEXT_STEPS.md`.
   can fire after an abort is already handled by the Step 5 test list change.
   Its note that it couldn't tell who wrote the AI_USAGE.md changes needed no
   action: I asked for them and approved the content.
+- **(Step 5) `rowState` exported early.** `rowsReducer.ts` exports
+  `rowState`, which returns `idle` for a user with no entry. `PLAN.md`
+  doesn't name it, and the reviewer noted it. The agent said Steps 6 and 7
+  need it. I kept it: making it private now and exporting it in Step 6 is
+  just extra work.
+- **(Step 5) Page reducer guards kept, with a rule.** I agreed with the agent
+  that the reducer should enforce the `DECISIONS.md` table instead of
+  trusting its callers, as the rows reducer does. The agent added "Any event
+  not in the transitions above leaves the state unchanged" to `DECISIONS.md`
+  "Page state machine" with wording I approved. I kept its structure, a
+  switch on the event with a state check in each case, over a nested switch
+  or a lookup table.
+- **(Step 5) Every guarded case tested.** I accepted the agent's proposal to
+  test `loadStarted` on `loading`, `loaded` and `neverLoggedIn`, and
+  token-carrying events on all four tokenless states. I also accepted the
+  reviewer's findings: an `idle` row in the `pageChanged` test, and all six
+  ignored page events.
+- **(Step 5) A new `Map` on every page change.** `pageChanged` in
+  `rowsReducer.ts` builds a new `Map` even when no row is loading, which
+  costs one re-render nobody sees. I kept it: `CLAUDE.md` allows an
+  optimization only with a measured reason, and there isn't one.
+- **(Step 5) Review notes left as is.** The reviewer said the `holdsToken`
+  comment in `rowsReducer.ts` restates the code. I kept it: it helps me
+  understand what that small piece of code does. The reviewer also couldn't
+  verify that the Step 5 tests were seen failing first. The evidence is in
+  the conversation, and I chose not to act on it.

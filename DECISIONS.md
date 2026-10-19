@@ -232,6 +232,8 @@ types. Nothing outside the API module sees a raw response shape.
   response arrived, stamped in the request callback.
 - `loading` -> `error` when `/users` fails after retries or is invalid.
 - `error` -> `loading` on Try again.
+- Any event not in the transitions above leaves the state unchanged. The
+  reducer returns the same state, so React skips the re-render.
 - There is no abort event. An aborted `/users` request (unmount, or the first
   of StrictMode's double-invoked effects) is dropped by `useUsers` without
   dispatching, for the same reason the rows reducer has none: abort is not a
