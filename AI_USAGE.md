@@ -169,6 +169,24 @@ and row refresh is in `NEXT_STEPS.md`.
   for `fetch` references used `grep --include=*.ts`, which zsh expanded as a
   glob and failed with "no matches found" before any check ran. The agent
   caught the error and reran the checks without the flag.
+- **(Step 4) Backoff test assumed fractional delays fire on time.** The agent
+  wrote the `random 0.999` case in `retry.test.ts` to expect the backoffs to
+  end at 200, 400 and 800ms. `setTimeout` truncates its delay to whole
+  milliseconds, so a 199.9ms backoff fires at 199ms. Caught by the test
+  failing against the real `retry.ts`. The agent changed the expectation to
+  199, 399 and 799ms, which are still below each base.
+- **(Step 4) Unused parameter in a test helper.** The `scripted` helper in
+  `retry.test.ts` declared a `_signal` parameter it never used, and
+  `@typescript-eslint/no-unused-vars` failed the lint check. Caught by
+  `npm run lint`. The agent typed the mock as
+  `vi.fn<(signal: AbortSignal) => Promise<Result<string>>>`, matching
+  `client.test.ts`.
+- **(Step 4) The "failing on 7 tests" count for the Step 3 timer check is out
+  of date.** In the review before Step 4, the reviewer said the claim couldn't
+  be checked and that the current code should fail more tests. The agent
+  removed `clearTimeout(timer)` from `client.ts` and ran the client tests: 9
+  of 11 failed, which matches the reviewer's count. The agent then restored
+  the file.
 
 ## What the AI got right that I had not specified
 
@@ -224,6 +242,30 @@ and row refresh is in `NEXT_STEPS.md`.
   said `client.ts` is the only file in `src` that references `fetch`, but the
   tests `PLAN.md` requires stub `fetch` in `client.test.ts`. The agent
   reported the conflict instead of marking it PASS.
+- **(Step 4) A mutation for each rule.** After all 9 tests failed against a
+  stub that throws, the agent broke one rule per run in `retry.ts` and
+  recorded which test caught it:
+  - the first attempt running twice;
+  - `onRetry` moved after the backoff;
+  - only 2 retries;
+  - every `http` status retried;
+  - `invalid` retried;
+  - `timeout` not retried;
+  - no jitter;
+  - jitter that ignores `random`;
+  - a sleep that ignores abort.
+
+  Each break failed the test that names that behavior.
+- **(Step 4) Proof no backoff timer outlives `withRetry`.** The agent added an
+  `afterEach` in `retry.test.ts` asserting `vi.getTimerCount()` is 0, the same
+  check as `client.test.ts`. It confirms the abort path clears its timer.
+- **(Step 4) `onRetry` can fire after an abort.** If the caller aborts between
+  a failed attempt and the backoff, `onRetry` still fires once. In Step 6 that
+  becomes an `attemptFailed` dispatched to a row that `pageChanged` has
+  already reset to `idle`. The agent flagged it and showed that `PLAN.md`
+  Step 5 tested only `succeeded` on a row with no token. A reducer missing the
+  token check in its `attemptFailed` branch would leave that row showing
+  "Retrying…" for the rest of the session, with no request in flight.
 
 ## What I changed manually
 
@@ -269,3 +311,14 @@ and row refresh is in `NEXT_STEPS.md`.
 - **(Step 3) "just now" left as a literal again.** The reviewer repeated
   that the two "just now" tests don't prove the locale pin. I didn't act on
   it: other locales and languages are out of scope.
+- **(Step 4) Retry count capped by the backoff list.** `withRetry` loops over
+  `BACKOFF_BASE_MS.slice(0, MAX_RETRIES)`, because indexing the tuple directly
+  would need a `!` or a branch that never runs. If `MAX_RETRIES` were raised
+  above 3, retries would silently stop at 3. I kept it as is.
+- **(Step 4) Truncated delays in the backoff test.** I accepted the
+  `random 0.999` expectations of 199, 399 and 799ms.
+- **(Step 4) A tokenless-row test for each event.** I agreed with the agent
+  that `attemptFailed`, `succeeded` and `failed` each need their own test on a
+  row with no token. The reducer checks the token separately in each event
+  branch, so a test of one event doesn't cover the others. I changed the
+  `PLAN.md` Step 5 test list and committed it separately.
