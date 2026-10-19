@@ -33,7 +33,6 @@ function reply(path: string): { status: number; body: unknown } {
   return { status: 200, body: { user_id: userId, logins: api.logins.get(userId) ?? [] } }
 }
 
-// Replies after 10ms, or rejects the way fetch does when its signal aborts.
 function fakeFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const { status, body } = reply(new URL(String(input)).pathname)
   return new Promise((resolve, reject) => {
@@ -145,6 +144,34 @@ test('a loaded page shows the total count, the first 25 users and the page posit
   expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled()
 })
 
+test('a list of one user shows the singular count', async () => {
+  api.users = rawUsers(1)
+  renderApp()
+
+  await advance(10)
+
+  expect(screen.getByText('1 user')).toBeInTheDocument()
+})
+
+test('a row whose latest login is 30 days old shows the Inactive badge and tint', async () => {
+  api.users = rawUsers(1)
+  api.logins.set(1, [{ login_time: '2026-09-19T12:00:00.000Z', ip_v4: '61.129.200.209' }])
+  renderApp()
+
+  await advance(10)
+  await advance(10)
+
+  const row = tableRow(1)
+  expect(cellTexts(row)).toEqual([
+    '1',
+    'First1 Last',
+    'user1@example.com',
+    '1 month ago Inactive',
+    '61.129.200.209',
+  ])
+  expect(row).toHaveClass('inactive', { exact: true })
+})
+
 test('a row that fails all retries shows Unavailable and Try again loads it; an empty row is Never logged in and Inactive', async () => {
   api.users = [
     { id: 1, first_name: 'Orazio', last_name: 'Slipper', email: 'oslipper0@example.com' },
@@ -165,7 +192,7 @@ test('a row that fails all retries shows Unavailable and Try again loads it; an 
     'Never logged in Inactive',
     '',
   ])
-  expect(tableRow(2)).toHaveClass('inactive')
+  expect(tableRow(2)).toHaveClass('inactive', { exact: true })
 
   await advance(1000)
 
