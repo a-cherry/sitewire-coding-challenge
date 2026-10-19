@@ -276,7 +276,7 @@ States:
 - `unavailable`: load failed after all retries, or was invalid.
 
 `loaded` and `neverLoggedIn` are final for the session. There is no refresh of
-a row that loaded; see "Deliberately not built".
+a row that loaded.
 
 Events:
 
@@ -482,21 +482,14 @@ Named so the omissions read as decisions. Detail lives in NEXT_STEPS.md.
   foreground queue for the current page ahead of a background queue. ~1,300
   to 1,400 requests per visit; at cap 10 and ~1.6s per request, ~3.5 to 4
   minutes.
-- **Refresh all and Refresh page.** A second page-level state machine with
-  partial-failure modes. Try again on the page error already covers `/users`.
-- **Refreshing a row that loaded.** The data is stable, so a refresh would
-  almost always return the same thing, yet it needed a `refreshing` state, a
-  "Couldn't refresh" flag and its clearing rules, and most of the abort and
-  ordering edge cases. Try again on `unavailable` rows keeps the part that
-  helps the user.
 - **Auto-refresh on page visit with a staleness window.** The data is stable,
   so it doubles traffic for no visible change, and routes every revisit
   through a refresh, which is where abort and ordering bugs live.
 - **Freshness display.** "Updated N min ago" per row, and the `fetchedAt`
   field behind it. Not in the brief, and showing it accurately would need a
   ticking clock.
-- **Country lookup**, page number in the URL, mobile layout, 429 /
-  Retry-After handling, a ticking clock for humanized times.
+- **Country lookup**, page number in the URL, mobile layout, a ticking clock
+  for humanized times.
 
 ## NEXT_STEPS material
 
@@ -505,8 +498,6 @@ Named so the omissions read as decisions. Detail lives in NEXT_STEPS.md.
   to the users API once, caches logins, and serves users with their latest
   login in one response. Enables global sorting, removes per-client fan-out,
   and puts retries where they're shared.
-- **Batch endpoint.** If we owned the API: `GET /logins?user_ids=...` or an
-  include parameter.
 - **Background loading and login sort** as described above, if the aggregator
   isn't available.
 - **Freshness.** In two stages. First make it observable: store `fetchedAt`
@@ -516,15 +507,10 @@ Named so the omissions read as decisions. Detail lives in NEXT_STEPS.md.
   long-lived sessions, or decisions made from the data. You can't apply a
   freshness policy to data whose age you don't track, and the TTL would come
   from the use case, not a guess.
-- **Row refresh.** If the data changed often: a refresh on loaded rows with a
-  `refreshing` state that keeps the previous data visible, and a failed
-  refresh that restores the previous data with a "Couldn't refresh" label
-  rather than replacing it with "Unavailable". Pairs with the freshness work.
 - **Sorting** by ID, name, email (client-side today) and login (needs the
   aggregator or background loading).
 - **Country from IP.** Server-side lookup against a local GeoIP database
   rather than a third-party call per row, cached by IP.
-- **429 / Retry-After.** Honor the server's wait instead of our backoff.
 - **Scale.** At 100k users `/users` itself needs server-side pagination, and
   client-side pagination stops working.
 - **Production fetching.** A data-fetching library (TanStack Query) once the
@@ -532,6 +518,24 @@ Named so the omissions read as decisions. Detail lives in NEXT_STEPS.md.
 - **Idempotency for writes.** The request token is a read-side ordering guard.
   For money-moving writes, idempotency keys checked transactionally server-side
   so a retried request can't release a draw twice.
+- **Retry budget or circuit breaker.** Each row retries on its own. If the API
+  is fully down, one page costs 25 rows x 4 attempts = 100 requests, and every
+  page visit or Try again repeats that against a server that is already
+  failing. Retries multiply load exactly when the server can least take it. A
+  budget shared across requests would stop retrying and fail fast for a
+  cooldown once most of the last N requests failed.
+- **Client telemetry.** Nothing records retry counts, the rate of unavailable
+  rows, or latency. The 30% failure rate and ~3.3s max come from a 30-call
+  hand probe. Reporting those numbers from the client would let the timeout
+  and retry count be tuned from observed traffic rather than a sample.
+- **Latest login stored on write.** Keep `last_login_at` and `last_login_ip`
+  on the user, updated when a login is recorded. Reads become one indexed
+  query, sorting by login is an index, and the inactive check becomes a query.
+  The cost of finding the latest login is paid once per write instead of on
+  every read.
+- **Personal data.** Emails and IP addresses are personal data. At scale:
+  access control on the endpoint, a retention policy for IPs, and possibly
+  masking IPs in the UI by default.
 - **Page in URL, mobile layout, a ticking clock for humanized times.**
 
 ## Anticipated questions
@@ -551,8 +555,7 @@ Short answers drawn from the decisions above.
 - **What's the request token for?** Out-of-order responses: last request wins.
   Not idempotency.
 - **Why can't I refresh a row that loaded?** The data is stable, so a
-  refresh returns the same thing. Only failed rows get Try again. Row refresh
-  is in NEXT_STEPS.md, with how a failed refresh should behave.
+  refresh returns the same thing. Only failed rows get Try again.
 - **Why `useReducer` and not XState?** Small machines; a pure reducer and a
   transition table is the whole thing.
 - **Where would the fan-out live in your architecture?** A server module that
