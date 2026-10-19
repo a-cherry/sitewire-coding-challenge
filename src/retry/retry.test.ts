@@ -5,7 +5,7 @@ import { withRetry } from './retry.ts'
 const success: Result<string> = { ok: true, value: 'logins' }
 const serverError: Result<string> = { ok: false, failure: { kind: 'http', status: 500 } }
 
-// Returns the scripted results in order, one per call.
+// Returns the scripted results in order, one per call, then success.
 function scripted(...results: Result<string>[]) {
   let call = 0
   return vi.fn<(signal: AbortSignal) => Promise<Result<string>>>(() => {

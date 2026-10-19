@@ -44,9 +44,9 @@ function isRetryable(failure: Failure): boolean {
   }
 }
 
-// Resolves false the moment signal aborts, without waiting out the timer.
 function sleep(ms: number, signal: AbortSignal): Promise<boolean> {
   return new Promise((resolve) => {
+    // An already-aborted signal never fires 'abort', so check it first.
     if (signal.aborted) {
       resolve(false)
       return

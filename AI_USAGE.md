@@ -179,8 +179,8 @@ and row refresh is in `NEXT_STEPS.md`.
   `retry.test.ts` declared a `_signal` parameter it never used, and
   `@typescript-eslint/no-unused-vars` failed the lint check. Caught by
   `npm run lint`. The agent typed the mock as
-  `vi.fn<(signal: AbortSignal) => Promise<Result<string>>>`, matching
-  `client.test.ts`.
+  `vi.fn<(signal: AbortSignal) => Promise<Result<string>>>`, the way
+  `client.test.ts` types its `fetch` mock.
 - **(Step 4) The "failing on 7 tests" count for the Step 3 timer check is out
   of date.** In the review before Step 4, the reviewer said the claim couldn't
   be checked and that the current code should fail more tests. The agent
