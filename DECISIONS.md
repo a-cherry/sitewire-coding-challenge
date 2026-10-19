@@ -305,6 +305,8 @@ Transitions:
 | `loading` | page changed | `idle` |
 | any other | page changed | unchanged |
 
+Any event not in the transitions above leaves the state unchanged.
+
 Rules:
 
 - **Request token.** Every load gets a new token stored on the row. An event
