@@ -318,8 +318,9 @@ tables in DECISIONS.md exactly.
 **Tests.** One test per row of the DECISIONS.md transition table, plus:
 - A stale token on each of `attemptFailed`, `succeeded`, `failed` leaves
   state unchanged.
-- A token-carrying event on a row with no token (for example `succeeded` on
-  an `idle` row after a page change) leaves state unchanged.
+- A token-carrying event on a row with no token leaves state unchanged, for
+  each of `attemptFailed`, `succeeded` and `failed` (for example on an `idle`
+  row after a page change).
 - `pageChanged` returns a `loading` row to `idle`, never `unavailable`.
 - `pageChanged` leaves `loaded`, `neverLoggedIn` and `unavailable` rows
   unchanged.
