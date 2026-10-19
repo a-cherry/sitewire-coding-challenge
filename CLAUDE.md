@@ -26,6 +26,9 @@ experience. Clarity beats cleverness everywhere.
 - Work only on the plan step named in the prompt. Write the files that step
   names, then stop. Do not start the next step.
 - Do not create files the step does not name. Do not add dependencies.
+- Do not turn off or downgrade a lint rule, and do not add an
+  `eslint-disable` comment. If a rule fires on code the plan specifies, stop
+  and report the rule, the file and line, and the quoted code.
 - Edit files in place. Never append a second copy of an existing block,
   import, or config section.
 - After writing or editing, show the full content of every changed file, or
@@ -98,6 +101,8 @@ silently breaks something. If deleting it only removes prose, delete it.
 
 - Vite, React (current stable at scaffold time), TypeScript.
 - Vitest and React Testing Library. npm.
+- ESLint with `typescript-eslint`, `eslint-plugin-react-hooks` (recommended
+  config) and `eslint-plugin-react-refresh`. Not oxlint.
 - Runtime dependencies are `react` and `react-dom` only. No data-fetching
   library (no TanStack Query, no SWR), no state library, no router, no date
   library, no UI or CSS framework.

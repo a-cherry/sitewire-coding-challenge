@@ -66,7 +66,11 @@ reviewer subagent in place before any real code.
 - Vite React TypeScript project in the repo root.
 - `tsconfig` with `strict` and `noUncheckedIndexedAccess`.
 - Vitest with jsdom, React Testing Library, `@testing-library/jest-dom`.
-- ESLint as configured by the Vite template.
+- Replace the template's oxlint with ESLint: remove `oxlint` and
+  `.oxlintrc.json`; add an ESLint flat config using `typescript-eslint`,
+  `eslint-plugin-react-hooks` (its recommended config) and
+  `eslint-plugin-react-refresh`. The `lint` script is `eslint .`. All are dev
+  dependencies.
 - `package.json` scripts: `dev`, `build`, `typecheck` (`tsc -b` or
   `tsc --noEmit`, whichever the template's project references need), `lint`,
   `test` (`TZ=UTC LC_ALL=en_US.UTF-8 vitest run`; the environment variables
@@ -77,11 +81,12 @@ reviewer subagent in place before any real code.
 - `src/styles.css`, empty or with a minimal reset.
 - `src/components/App.test.tsx` with one test: the heading renders.
 - `.claude/agents/reviewer.md` with exactly the content in the appendix.
-- Report, without acting on it: the installed versions of `react` and
-  `eslint-plugin-react-hooks`, whether `useEffectEvent` is exported as stable
-  by that React version, and whether the lint config includes the hooks
-  plugin's purity rule. If `useEffectEvent` is not stable, say so and stop
-  before reporting the step done.
+- Report, without acting on it: the installed versions of `react`, `eslint`
+  and `eslint-plugin-react-hooks`, whether `useEffectEvent` is exported as
+  stable by that React version, and confirmation that `react-hooks/purity` is
+  active (for example, from `npx eslint --print-config src/main.tsx`). If
+  `useEffectEvent` is not stable, say so and stop before reporting the step
+  done.
 
 **Out of scope.** Any domain, API, retry, state or UI logic.
 
@@ -93,6 +98,10 @@ passing.
   pass. Output pasted.
 - `dependencies` in `package.json` contains only `react` and `react-dom`.
 - `strict` and `noUncheckedIndexedAccess` are both `true`.
+- The lint config applies the `eslint-plugin-react-hooks` recommended rules,
+  including `react-hooks/purity`. No lint rule is turned off or downgraded,
+  and no file contains an `eslint-disable` comment.
+- `oxlint` and `.oxlintrc.json` are gone.
 - `main.tsx` wraps the app in `StrictMode`.
 - No template boilerplate remains.
 - `.claude/agents/reviewer.md` matches the appendix exactly.
