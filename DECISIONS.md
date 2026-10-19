@@ -494,8 +494,8 @@ Named so the omissions read as decisions. Detail lives in NEXT_STEPS.md.
   and puts retries where they're shared.
 - **Background loading and login sort** as described above, if the aggregator
   isn't available.
-- **Sorting** by ID, name, email (client-side today) and login (needs the
-  aggregator or background loading).
+- **Sorting** by ID, name, email (could be done client-side, over the list
+  already loaded) and login (needs the aggregator or background loading).
 - **Country from IP.** Server-side lookup against a local GeoIP database
   rather than a third-party call per row, cached by IP.
 - **Scale.** At 100k users `/users` itself needs server-side pagination, and
@@ -559,10 +559,10 @@ the presentation:
 - **README.md**: what it does, how to run it (`npm install`, `npm run dev`,
   `npm test`), the states the app and each row can be in, key decisions in
   brief, the assumptions made (30-day month, stable data, retry numbers,
-  labels relative to load time), and the time spent. Facts only, drawn from
-  this file, the code, and content Drew provides (the time spent).
+  labels relative to load time). Facts only, drawn from this file and the
+  code.
 - **AI_USAGE.md**: tools used, method (this file and CLAUDE.md as a contract,
-  per-step review), useful prompts, what the AI got wrong, what it got right
+  per-step review), what the AI got wrong, what it got right
   that wasn't specified, what was changed by hand. Drew owns it. The agent
   edits it only when Drew asks, with content Drew provides.
 - **NEXT_STEPS.md**: the deferred items above, each with why it was deferred
@@ -592,7 +592,7 @@ Checklist for the final review, in the brief's terms:
   the First/Last name split (the brief asks for Full name), flagged sorting,
   Refresh all, background loading and auto-refresh as scope the brief didn't
   ask for, and pushed the abort and stale-response rules from undefined to
-  specified. Those cuts and rules are reflected above.
+  specified. Those rules are reflected above.
 - A second independent check after the docs were revised flagged refreshing
   loaded rows as the largest piece of scope left, given stable data. Cut;
   only `unavailable` rows get Try again.

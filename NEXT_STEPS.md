@@ -71,9 +71,8 @@ shared.
 
 Keep `last_login_at` and `last_login_ip` on the user, updated when a login is
 recorded. Reads become one indexed query, sorting by login is an index, and
-the inactive check becomes a query (`last_login_at < now() - 30 days`). The
-cost of finding the latest login is paid once per write instead of on every
-read.
+the inactive check becomes a query. The cost of finding the latest login is
+paid once per write instead of on every read.
 
 ### Personal data
 

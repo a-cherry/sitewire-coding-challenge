@@ -2,7 +2,30 @@
 
 ## Summary
 
-_To be written at the end, once implementation is done._
+I planned the app with Claude in a chat session, then built it with Claude
+Code in nine steps against three documents: `DECISIONS.md` (the brief and
+every decision), `CLAUDE.md` (working and architecture rules) and `PLAN.md`
+(step scope and acceptance criteria). A read-only reviewer subagent checked
+the project before each step from Step 2 on, and I decided which of its
+findings to fix.
+
+- **Where the AI shaped the design.** It asked for API probes before
+  designing, argued for TypeScript and React over my Java lean, talked me out
+  of a staleness window, and specified invalid-response handling I hadn't
+  considered.
+- **What the AI got wrong.** In planning, it proposed scope the brief didn't
+  ask for and left some decisions to the implementing agent. In
+  implementation, most mistakes were in tests and evidence: guards no test
+  protected, retry tests that didn't count attempts, and mutation runs without
+  the time zone pin. In the docs step, it wrote claims the code didn't
+  support. The reviewer or the agent's own runs caught most of these; I
+  caught the rest.
+- **What I decided by hand.** The timeout covers only the wait for the
+  response, the reviewer protocol lives in its own file, the Step 8
+  walkthrough ran from a separate Playwright session, and I cut five items
+  from `NEXT_STEPS.md`.
+- **Result.** 96 tests in 10 files, `react` and `react-dom` as the only
+  runtime dependencies, and clean typecheck, lint and build.
 
 ## Tools
 
@@ -495,9 +518,9 @@ and row refresh is in `NEXT_STEPS.md`.
   `CLAUDE.md`. Sorting stays, since it's expected for data shown this way.
 - **(Step 9) Earlier entries that point to `NEXT_STEPS.md`.** The Planning
   session section and the 5-minute window bullet say Refresh all and Refresh
-  page, auto-refresh, row refresh and the freshness display went to
-  `NEXT_STEPS.md`. Those items were later cut from `NEXT_STEPS.md` as
-  outside the brief. Sorting and background loading are still there.
+  page, auto-refresh, row refresh, the freshness display and the staleness
+  window went to `NEXT_STEPS.md`. Those items were later cut from
+  `NEXT_STEPS.md` as outside the brief. Sorting and background loading are still there.
 
 ## Judgment calls where I accepted the agent's reasoning
 
