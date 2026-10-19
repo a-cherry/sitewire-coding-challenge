@@ -225,6 +225,24 @@ and row refresh is in `NEXT_STEPS.md`.
   and launched the reviewer on Step 5 plus a recheck of Step 4's acceptance
   criteria, and explained only once it was running. I stopped it and asked
   for a Step 5 review.
+- **(Step 6) An `any` that the checks didn't catch.** The agent's first
+  `useRowLogins.ts` started row state as `new Map() satisfies RowsState`.
+  `satisfies` checks the value without changing its type, so the map stayed
+  `Map<any, any>`, which breaks the no-`any` rule even though `tsc` and lint
+  passed. The agent caught it while checking its own code, changed it to
+  `new Map<number, RowState>()`, and reran the checks.
+- **(Step 6) The same rejected grep as Step 3.** The agent's acceptance check
+  for `Date.now`, `Math.random` and token generation used
+  `grep --include=*.ts` again, and zsh failed with "no matches found" before
+  any check ran. The agent caught the error and reran the grep without the
+  flag.
+- **(Step 6) A comment that called retrying a state.** `useUsers` passes a
+  no-op `onRetry` to `withRetry`, and the agent's comment on it read "The
+  page state has no retrying state to show." I pointed out that retrying is
+  an action, not a state: rows show "Retrying…" as a way of displaying
+  `loading`, not as a separate state. At my direction the agent changed the
+  comment to `/users retries aren't shown; the page stays on "Loading
+  users…" until it settles.`
 
 ## What the AI got right that I had not specified
 
@@ -318,6 +336,17 @@ and row refresh is in `NEXT_STEPS.md`.
   well as the new ones. Every break passed the old tests and failed exactly
   one new test, which shows the new cases close real gaps rather than repeat
   existing ones.
+- **(Step 6) Each page visit aborts only its own requests.** The page effect
+  in `useRowLogins.ts` creates a new set of `AbortController`s on every run
+  and points the `pageRequests` ref at it. `load`, including loads started by
+  `retry`, adds to the current set, and the cleanup aborts the set from its
+  own run. Under StrictMode, the first cleanup can't abort the second run's
+  requests, and Try again loads are aborted with the page they belong to.
+- **(Step 6) The `/users` effect depends on a boolean.** `useUsers` runs its
+  effect on `page.kind === 'loading'`, not on the page state object. It
+  starts a request on mount and when Try again returns the page to
+  `loading`, and a new state object of the same kind doesn't re-run it and
+  abort the request in flight.
 
 ## What I changed manually
 
@@ -412,3 +441,16 @@ and row refresh is in `NEXT_STEPS.md`.
   understand what that small piece of code does. The reviewer also couldn't
   verify that the Step 5 tests were seen failing first. The evidence is in
   the conversation, and I chose not to act on it.
+- **(Step 6) Late `attemptFailed` left as is.** The reviewer noted that
+  `onRetry` in `useRowLogins.ts` can dispatch `attemptFailed` after the page
+  changes, if an attempt failed just before the abort. I made no code
+  change: the cleanup handles it. `pageChanged` has already returned the row
+  to `idle`, which holds no token, so the reducer ignores the event.
+- **(Step 6) No-op `onRetry` for `/users` kept.** The reviewer noted that
+  `useUsers.ts` doesn't show `/users` retries. I kept the no-op: retrying is
+  an action, not a page state, and `DECISIONS.md` shows "Loading users…"
+  until the request settles. I didn't make `onRetry` optional in `retry.ts`
+  or add a page state.
+- **(Step 6) No tests in this step.** `PLAN.md` assigns the hooks' tests to
+  Step 7's component tests, so the agent added none and recorded that in its
+  report.
