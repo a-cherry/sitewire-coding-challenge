@@ -187,6 +187,15 @@ and row refresh is in `NEXT_STEPS.md`.
   removed `clearTimeout(timer)` from `client.ts` and ran the client tests: 9
   of 11 failed, which matches the reviewer's count. The agent then restored
   the file.
+- **(Step 4) An abort before the backoff starts was untested.** The
+  `if (signal.aborted)` check at the top of `sleep` in `retry.ts` had no test:
+  the abort test only aborted during the wait, so deleting the check left all
+  55 tests passing. Without it, an abort that lands before the backoff starts
+  waits out the full backoff and makes one more attempt. The agent noticed
+  the gap while fixing the reviewer's comment finding on `sleep`, and added
+  `an abort before the backoff starts resolves aborted at once and makes no
+  further calls`. It showed the test failing with the check removed (a 5s
+  test timeout and one leftover timer) and passing with it restored.
 
 ## What the AI got right that I had not specified
 
@@ -322,3 +331,15 @@ and row refresh is in `NEXT_STEPS.md`.
   row with no token. The reducer checks the token separately in each event
   branch, so a test of one event doesn't cover the others. I changed the
   `PLAN.md` Step 5 test list and committed it separately.
+- **(Step 4) Review fixes before Step 5.** From the review before Step 5, I
+  accepted three notes:
+  - The comment on `sleep` in `retry.ts` restated the code. It now explains
+    why the already-aborted check comes first.
+  - The `scripted` helper comment in `retry.test.ts` left out its fallback to
+    `success`. It now mentions it.
+  - My Step 4 bullet said the mock typing matched `client.test.ts`. It now
+    says the mock is typed the way `client.test.ts` types its `fetch` mock.
+- **(Step 4) Two review notes left as is.** The reviewer's note that `onRetry`
+  can fire after an abort is already handled by the Step 5 test list change.
+  Its note that it couldn't tell who wrote the AI_USAGE.md changes needed no
+  action: I asked for them and approved the content.

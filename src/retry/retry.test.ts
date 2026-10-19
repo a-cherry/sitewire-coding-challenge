@@ -141,3 +141,16 @@ test('an abort during backoff resolves aborted at once and makes no further call
   expect(await pending).toEqual({ ok: false, failure: { kind: 'aborted' } })
   expect(attempt).toHaveBeenCalledTimes(1)
 })
+
+test('an abort before the backoff starts resolves aborted at once and makes no further calls', async () => {
+  const caller = new AbortController()
+  const attempt = vi.fn<(signal: AbortSignal) => Promise<Result<string>>>(() => {
+    caller.abort()
+    return Promise.resolve(serverError)
+  })
+
+  const { pending } = run(attempt, () => 0, caller.signal)
+
+  expect(await pending).toEqual({ ok: false, failure: { kind: 'aborted' } })
+  expect(attempt).toHaveBeenCalledTimes(1)
+})
