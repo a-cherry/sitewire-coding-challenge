@@ -243,6 +243,17 @@ and row refresh is in `NEXT_STEPS.md`.
   `loading`, not as a separate state. At my direction the agent changed the
   comment to `/users retries aren't shown; the page stays on "Loading
   users…" until it settles.`
+- **(Step 7) Retry tests that didn't count attempts.** The `/users` failure
+  test and the Unavailable row test in `App.test.tsx` checked the final
+  message but not how many requests were made, so a hook that gave up after
+  one attempt would still pass. None of the agent's six mutation runs touched
+  the attempt count. Caught by the reviewer. The agent added a `requestsTo`
+  helper and asserted 5 calls for each, StrictMode's aborted first request
+  plus four attempts, and showed both failing with `MAX_RETRIES` set to 1.
+- **(Step 7) `React.ReactNode` without an import.** The first `UserRow.tsx`
+  typed a parameter as `React.ReactNode` without importing `React`. The agent
+  caught it in its own code before running the checks and changed it to
+  `import type { ReactNode } from 'react'`.
 
 ## What the AI got right that I had not specified
 
@@ -347,6 +358,28 @@ and row refresh is in `NEXT_STEPS.md`.
   starts a request on mount and when Try again returns the page to
   `loading`, and a new state object of the same kind doesn't re-run it and
   abort the request in flight.
+- **(Step 7) Component tests run under StrictMode.** `App.test.tsx` renders
+  `<StrictMode><App /></StrictMode>`, as `main.tsx` does, and its fake `fetch`
+  replies after 10ms or rejects when its signal aborts. The double-invoked
+  effects run in every test, and the first set of requests is aborted and
+  dropped as it is in the browser.
+- **(Step 7) Tests seen failing against the old UI first.** The agent wrote
+  the three new tests before any component and showed each failing against
+  the Step 1 `App`, which rendered only the heading. With the UI in place, it
+  broke one behavior per run and recorded which test caught it:
+  - the page Try again doing nothing;
+  - Prev never disabled;
+  - "Retrying…" never shown;
+  - no exact time in the hover text;
+  - never-logged-in rows not marked inactive;
+  - the row Try again doing nothing.
+- **(Step 7) Whole rows asserted, not fragments.** The row test compares every
+  cell of a row to an exact array, for example
+  `['1', 'Orazio Slipper', 'oslipper0@example.com', '3 days ago', '61.129.200.209']`,
+  so a value in the wrong column or a leftover button fails the test.
+- **(Step 7) Row hooks mount only after `/users` loads.** `App.tsx` keeps the
+  page index and `useRowLogins` in `LoadedUsers`, which renders only in the
+  `loaded` state. The row hook never runs against a placeholder user list.
 
 ## What I changed manually
 
@@ -454,3 +487,23 @@ and row refresh is in `NEXT_STEPS.md`.
 - **(Step 6) No tests in this step.** `PLAN.md` assigns the hooks' tests to
   Step 7's component tests, so the agent added none and recorded that in its
   report.
+- **(Step 7) Attempt counts asserted.** I accepted the reviewer's finding that
+  the retry tests didn't prove four attempts, and had the agent fix it.
+- **(Step 7) No re-proof for Step 7 tests.** The reviewer couldn't verify
+  that the Step 7 tests were seen failing first. The evidence is in the
+  agent's step report, and I chose not to act on it.
+- **(Step 7) Heading test deleted.** The reviewer noted that `App.test.tsx`
+  had four tests against the plan's "a few", counting the Step 1 heading
+  test. That test only proved the scaffold worked, and the page tests now
+  cover that, so I had the agent delete it. Early tests like it should be
+  pruned once later tests cover the same ground.
+- **(Step 7) "1 user" kept.** The reviewer noted that the singular count in
+  `App.tsx` isn't in `DECISIONS.md`. I kept it, since "1 users" would be wrong,
+  and had the agent add "A list of one shows "1 user"." to `DECISIONS.md`
+  "Page state machine".
+- **(Step 7) `users` made readonly.** The reviewer noted that `LoadedUsers`
+  in `App.tsx` typed `users: User[]`, while `UsersTable` and `useRowLogins`
+  use `readonly User[]`. I asked whether readonly had downsides. The agent
+  said it is compile-time only and blocks only mutating methods like `push`
+  and in-place `sort`, which the app shouldn't call on `/users` data. I had
+  it change the type.

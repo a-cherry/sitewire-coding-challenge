@@ -242,6 +242,7 @@ types. Nothing outside the API module sees a raw response shape.
   users." with a Try again button.
 - The total count ("1,000 users") renders only in `loaded`. It is
   `users.length` from `/users`, never a count of rows whose logins loaded.
+  A list of one shows "1 user".
 - An empty user list shows "0 users" and "No users to show.", with no
   pagination. "Page 1 of 0" would be nonsense.
 

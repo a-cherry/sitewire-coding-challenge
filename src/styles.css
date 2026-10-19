@@ -8,3 +8,51 @@ body {
   margin: 0;
   font-family: system-ui, sans-serif;
 }
+
+main {
+  padding: 1rem;
+}
+
+.pagination {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.25rem 0.75rem;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+tr.inactive {
+  background: #fdf3dc;
+}
+
+.badge {
+  padding: 0 0.375rem;
+  border: 1px solid #a06b00;
+  border-radius: 0.25rem;
+  color: #6b4700;
+  font-size: 0.75rem;
+}
+
+.muted {
+  color: #666;
+}
+
+.text-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #0645ad;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
