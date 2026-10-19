@@ -146,6 +146,29 @@ and row refresh is in `NEXT_STEPS.md`.
   then pointed out that `now` comes from the user's clock, so a slightly slow
   clock would drop a login from seconds ago; that is where the 5-minute
   tolerance came from.
+- **(Step 2) Wrong space in the exact-time test.** The agent wrote the
+  `formatExact` expectation in `formatTime.test.ts` with a narrow no-break
+  space (`\u202f`) before "AM". Node v24.14.1 outputs a plain space. Caught by
+  the test failing against the real implementation; the agent confirmed it
+  with a byte dump of the `Intl` output and corrected the expected string.
+- **(Step 2) Unreadable test names.** The first `test.each` table in
+  `formatTime.test.ts` printed each case's timestamp where the expected text
+  should be, for example `90 seconds ago is "1792411110000"`. The agent caught
+  it in its own test output and changed the table so the names show the
+  expected text.
+- **(Step 2) Mutation runs without the time zone pin.** The agent ran its
+  `formatTime` mutation checks through `npx vitest run` directly, without
+  `TZ=UTC`, so `formatExact` failed in every run for an unrelated reason. The
+  agent noticed the stray MDT failures and reran the checks with the pin.
+- **(Step 2) A grep that hid evidence.** The agent's acceptance check for
+  `now` parameters filtered out lines containing "test", which also hid
+  `latestLogin`. The agent caught it and showed the signature from the file.
+- **(Step 2) The reviewer flagged an untested cleanup test that had been seen
+  failing.** In the review before step 2, the reviewer rated the second test
+  in `src/test/cleanup.test.tsx` "should fix" for having no evidence of
+  failing first. The agent had already shown it failing, with
+  `afterEach(cleanup)` removed. The reviewer only checks the repo, and the
+  conversation isn't in it.
 
 ## What the AI got right that I had not specified
 
@@ -162,6 +185,28 @@ and row refresh is in `NEXT_STEPS.md`.
 - **Specified invalid-response handling** I hadn't considered: a `user_id`
   that doesn't match the request, an unparseable timestamp invalidating the
   whole response rather than being skipped, and not retrying a malformed 200.
+- **(Step 2) Mutations, not just stubs that throw.** Stubs that throw show
+  only that a test runs. With the real code in place, the agent broke each
+  rule on purpose and recorded which test caught it: the tie comparison `>`
+  changed to `>=`, the future tolerance set to 0, the future filter removed,
+  `Math.floor` changed to `Math.round`, a 31-day month, the "just now"
+  fallback removed, and `timeStyle: 'medium'`.
+- **(Step 2) `allFuture` can't reach `isInactive`.** The agent typed the
+  parameter as `Exclude<LatestLoginResult, { kind: 'allFuture' }>`. Inactive
+  has no meaning when every login is in the future, so the compiler rejects
+  that call.
+- **(Step 2) The reviewer found the "just now" gap.** `formatTime.ts` returns
+  a hard-coded English `'just now'`. So the German-locale test run proves the
+  locale pin for only 10 of the 12 `formatRelative` cases, and a non-English
+  browser would mix languages in the column.
+- **(Step 2) The reviewer found the missing minute boundary.** Every other
+  unit had an exact-boundary test, but the minute was tested only at 59 and
+  90 seconds.
+- **(Step 2) The reviewer agent wasn't loaded.** The `reviewer` agent type was
+  missing from the session, even though `.claude/agents/reviewer.md` exists.
+  The agent reported it, ran a general-purpose agent with the reviewer.md
+  instructions word for word, and checked `git status` afterwards to confirm
+  nothing changed.
 
 ## What I changed manually
 
@@ -169,4 +214,17 @@ _Recorded during implementation._
 
 ## Judgment calls where I accepted the agent's reasoning
 
-_Recorded during implementation._
+- **(Step 2) Target layout updated.** From the review before step 2, I
+  accepted adding `src/test/setup.ts` and `src/test/cleanup.test.tsx` to the
+  `PLAN.md` target layout.
+- **(Step 2) No comment on `afterEach(cleanup)`.** The reviewer suggested a
+  one-line comment in `src/test/setup.ts` explaining that cleanup is
+  registered by hand because Vitest globals are off. I declined: the comment
+  seemed unnecessary.
+- **(Step 2) 60-second boundary added.** I accepted the reviewer's
+  minute-boundary finding. The agent added `60 seconds ago is "1 minute ago"`
+  to the `formatRelative` table and showed it failing when the `>=` in
+  `formatTime.ts` becomes `>`.
+- **(Step 2) "just now" left as a literal.** I didn't act on the reviewer's
+  "just now" finding. It meets the brief, and I agreed with the agent's
+  reasoning: `DECISIONS.md` specifies the literal, and the app is English-only.

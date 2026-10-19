@@ -51,6 +51,8 @@ src/
     UsersTable.tsx
     UserRow.tsx
     Pagination.tsx
+  test/
+    setup.ts              cleanup.test.tsx
   main.tsx
   styles.css
 ```
