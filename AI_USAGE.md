@@ -254,6 +254,21 @@ and row refresh is in `NEXT_STEPS.md`.
   typed a parameter as `React.ReactNode` without importing `React`. The agent
   caught it in its own code before running the checks and changed it to
   `import type { ReactNode } from 'react'`.
+- **(Step 8) A fail-first run that skipped an assertion.** To show the N5 test
+  `a row whose latest login is 30 days old shows the Inactive badge and tint`
+  failing, the agent removed the loaded-row inactive check in `UserRow.tsx`.
+  The test failed on the cell text, so the `toHaveClass('inactive')`
+  assertion after it never ran. The agent caught it in its own output and
+  ran a second break that removed only the row class, which failed the class
+  assertion.
+- **(Step 8) The reviewer flagged the N4 and N5 tests for no fail-first
+  evidence.** The agent had shown both failing against broken code in its
+  report. The reviewer only checks the repo, and the conversation isn't in
+  it.
+- **(Step 8) A `cat` flag macOS doesn't have.** The agent ran `cat -A` to
+  check the end of `.gitignore`, and the BSD `cat` rejected the flag. The
+  edit after it still ran, and the agent confirmed it with
+  `git check-ignore`.
 
 ## What the AI got right that I had not specified
 
@@ -380,6 +395,27 @@ and row refresh is in `NEXT_STEPS.md`.
 - **(Step 7) Row hooks mount only after `/users` loads.** `App.tsx` keeps the
   page index and `useRowLogins` in `LoadedUsers`, which renders only in the
   `loaded` state. The row hook never runs against a placeholder user list.
+- **(Step 8) Missing hover text traced to the browser, not the code.** I saw
+  no tooltip when hovering a row. The agent pointed out the exact time is on
+  the Last login cell only (`UserRow.tsx:56`, `title={formatExact(...)}`),
+  ran the same `Intl.DateTimeFormat` call in Node to show the MDT output, and
+  gave me a way to tell a code defect from a browser that doesn't show
+  `title` tooltips: inspect the `<td>` for the attribute. The Playwright
+  walkthrough then read titles such as "Oct 18, 2026, 7:37:17 AM MDT" from
+  the cells.
+- **(Step 8) The reviewer found the Playwright log could be committed.**
+  Playwright wrote `.playwright-mcp/console-...log` to the repo root, and
+  `.gitignore` didn't cover it, so a blanket `git add` would have committed
+  it.
+- **(Step 8) The reviewer used the console log as partial evidence.** It
+  read the backoff gaps of 149, 278 and 799ms between the four blocked
+  `/users` attempts and matched them to the equal-jitter formula in
+  `retry.ts`.
+- **(Step 8) Copying errors caught in the walkthrough report.** My pasted
+  report gave the Try again label as "Try loading login data for Dru
+  Hagain". The agent showed that the label is built from the full name at
+  `UserRow.tsx:79`, so the text was damaged in copying, not produced by the
+  app.
 
 ## What I changed manually
 
@@ -395,6 +431,13 @@ and row refresh is in `NEXT_STEPS.md`.
   adding the launch steps, including the general-purpose fallback, to
   `CLAUDE.md`. I moved them to `SUBAGENT_PROTOCOL.md`, with a pointer from
   `PLAN.md` "How each step runs".
+- **(Step 8) Checklist walked with Playwright from a separate session.**
+  `PLAN.md` has me walk the checklist in a browser. The agent's session had
+  started before I added the Playwright MCP, so neither it nor a subagent it
+  launched could see the tools. I ran the walkthrough from another session
+  and gave the agent the results. All 9 items were observed. No user in ids
+  1 to 300 had an empty logins array, so "Never logged in" was checked by
+  stubbing user 301's logins response.
 
 ## Judgment calls where I accepted the agent's reasoning
 
@@ -507,3 +550,27 @@ and row refresh is in `NEXT_STEPS.md`.
   said it is compile-time only and blocks only mutating methods like `push`
   and in-place `sort`, which the app shouldn't call on `/users` data. I had
   it change the type.
+- **(Step 8) Step 7 review: one comment removed, two tests added.** I
+  accepted three of the reviewer's notes:
+  - The comment on `fakeFetch` in `App.test.tsx` restated the code. Deleted.
+  - The singular count had no test. The agent added `a list of one user
+    shows the singular count`.
+  - The Inactive badge and tint on a loaded row had no UI test. The agent
+    added `a row whose latest login is 30 days old shows the Inactive badge
+    and tint`, at the 30-day boundary.
+- **(Step 8) Two Step 7 review notes left as is.** The reviewer said my
+  AI_USAGE.md claim that the page tests cover the deleted heading test isn't
+  backed by a test. I removed the heading test on purpose. The reviewer also
+  couldn't tell who wrote the Step 7 AI_USAGE.md changes. I approved that
+  content.
+- **(Step 8) Exact class assertions.** I accepted the reviewer's note that
+  `toHaveClass('inactive')` checks containment. Both positive assertions in
+  `App.test.tsx` now pass `{ exact: true }`. The agent showed both failing
+  with an extra class on the row.
+- **(Step 8) Review fixes in their own commit.** The reviewer noted the
+  Step 7 review tests sat in the Step 8 working tree. The agent committed
+  `App.test.tsx` on its own as `fdbad49`.
+- **(Step 8) Playwright log ignored.** I had the agent add `.playwright-mcp/`
+  to `.gitignore`.
+- **(Step 8) No re-proof for the N4 and N5 tests.** I disregarded the
+  reviewer's fail-first note.
