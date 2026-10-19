@@ -69,7 +69,8 @@ reviewer subagent in place before any real code.
 - Replace the template's oxlint with ESLint: remove `oxlint` and
   `.oxlintrc.json`; add an ESLint flat config using `typescript-eslint`,
   `eslint-plugin-react-hooks` (its recommended config) and
-  `eslint-plugin-react-refresh`. The `lint` script is `eslint .`. All are dev
+  `eslint-plugin-react-refresh`. The `lint` script is
+  `eslint . --max-warnings 0`, so warnings fail the check. All are dev
   dependencies.
 - `package.json` scripts: `dev`, `build`, `typecheck` (`tsc -b` or
   `tsc --noEmit`, whichever the template's project references need), `lint`,
